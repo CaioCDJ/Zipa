@@ -5,7 +5,6 @@ using Spectre.Console;
 // ZipFile.CreateFromDirectory("./tozip/","zipado.zip");
 
 void zip(){
-  
   for(int i=1;i<=args.Length;i++){
     
   }
@@ -13,8 +12,32 @@ void zip(){
 
 void unzip(){
 
-}
+  var file = new FileInfo(args[1]);
 
+  string name = file.Name.Remove((file.Name.Length-4) , 4);
+
+  int i = 1;
+  
+  while(true){
+    
+    if(!Directory.Exists(name)) break;
+    
+    else if(!Directory.Exists(name+i)){
+      name = name +i;
+      break;
+    }
+    i++;
+  }
+  Console.WriteLine(file.Directory.FullName +@"/"+name);
+
+  ZipFile.ExtractToDirectory(
+      file.FullName,
+      file.Directory.FullName +@"/"+name
+      );
+
+  AnsiConsole.MarkupLine($"\n[green]{name} foi descompactado![/]");
+
+}
 
 void directory(){
 
