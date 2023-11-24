@@ -6,6 +6,7 @@ namespace Zipa;
 class MainController{
 
   public List<DTO>dto;
+  public DirectoryInfo mainDir;
 
   public MainController(){
       dto = new List<DTO>();
@@ -22,8 +23,7 @@ class MainController{
       case '5': AnsiConsole.MarkupLine("[red]There is no hope[/]"); break; 
       case '4': 
       default: 
-          Environment.Exit(0);
-        break;
+          Environment.Exit(0); break;
     }
   }
 
@@ -33,14 +33,16 @@ class MainController{
    
     var itemFile = ZipFile.Open(filepath,ZipArchiveMode.Read).Entries;
     foreach(var item in itemFile){
-      System.Console.WriteLine(item.GetType());
+      Console.WriteLine(item.GetType());
     }
-    System.Console.WriteLine(itemFile);
+    Console.WriteLine(itemFile);
     
   }
   
-  public void compress(string[]args=null){
-      
+  public void compress(string[] args=null){
+ 
+    string filename = AnsiConsole.Ask<string>("File name:") ?? "compact";
+
     listItems();
     
     var selected = Ui.selectDirs(
@@ -61,10 +63,31 @@ class MainController{
         }
       }
     }
-    
+
+
+    using(var fs = new FileStream(filename+".zip",FileMode.Create))
+    using(var zip  = new ZipArchive(fs, ZipArchiveMode.Create)){
+      foreach(var file in dto.Where(x=>x.selected ==true && x.dir ==false))
+        zip.CreateEntryFromFile(file.path,Path.GetFileName(file.path));
+
+      foreach(var file in dto.Where(x=>x.selected ==true && x.dir == true)){
+        var dir = new DirectoryInfo(file.path);
+        var father = dir.Parent;
+
+        foreach(var path in Directory.GetFiles(dir.FullName,"*",SearchOption.AllDirectories)){
+            zip.CreateEntryFromFile(
+            path,
+            path.Replace(father.FullName,"")
+          );
+        }
+      }
+    }
+
+    AnsiConsole.Write(new Rule());
+    AnsiConsole.MarkupLine($"[green]{filename}.zip[/] foi gerado com sucesso");
   }
   
-  public void decompress(string arq = null){
+  public void decompress(string  arq = null){
 
     string filepath = arq ?? getFilePath();
 
@@ -130,7 +153,5 @@ class MainController{
       throw new Exception();
     
     return dto.Where(x=>x.name==choice).Select(x=>x.path).First();
-
   }
-
 }

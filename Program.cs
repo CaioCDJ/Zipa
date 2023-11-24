@@ -58,7 +58,9 @@ try{
   
   else controller.main();
 }catch (Exception e){
-    
-    throw;
+
+  Console.WriteLine("\n\n FUDEU");
+  Console.WriteLine(e.Message);
+  Console.WriteLine(e.StackTrace);
 }
 
