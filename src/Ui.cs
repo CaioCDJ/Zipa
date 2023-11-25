@@ -3,10 +3,14 @@ using Spectre.Console;
 namespace Zipa;
 
 public class Ui{
-  //
+
   // public void string msgSuccess(string msg="sucesso"){
   //   
   // }
+
+
+  public static void showPath(string path)
+    => AnsiConsole.Write(new TextPath(path));
 
   public static string mainMenu()
     =>AnsiConsole.Prompt<string>(

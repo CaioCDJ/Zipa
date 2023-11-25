@@ -108,12 +108,19 @@ class MainController{
       i++;
     }
 
-    ZipFile.ExtractToDirectory(
-      file.FullName,
-      file.Directory.FullName +@"/"+name
-      );
+    Directory.CreateDirectory(name);
+    var mainDir = new DirectoryInfo(name);
 
-    AnsiConsole.MarkupLine($"\n[green]{name} foi descompactado![/]");
+    using ZipArchive archive = ZipFile.OpenRead(file.FullName);
+    foreach(var entry in archive.Entries){
+      string destination = mainDir.FullName+"//"+ entry.FullName;      
+      
+      Directory.CreateDirectory(Path.GetDirectoryName(destination)); 
+   
+    if(!entry.FullName.EndsWith("/") || entry.FullName.EndsWith("//"))
+        entry.ExtractToFile(destination,true);
+    }
+        AnsiConsole.MarkupLine($"\n[green]{name} foi descompactado![/]");
   }
 
   public void listItems(){
