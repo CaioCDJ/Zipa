@@ -20,8 +20,8 @@ class MainController{
       case '1': show(); break;
       case '2': compress(); break;
       case '3': decompress(); break;
-      case '5': AnsiConsole.MarkupLine("[red]There is no hope[/]"); break; 
-      case '4': 
+      case '4': Ui.help(); break;
+      case '5': 
       default: 
           Environment.Exit(0); break;
     }
@@ -44,47 +44,68 @@ class MainController{
     string filename = AnsiConsole.Ask<string>("File name:") ?? "compact";
 
     listItems();
-    
+
+
     var selected = Ui.selectDirs(
-        dto.Select(x=>x.name).ToArray()
+      dto.Select(x=>x.name).ToArray()
     );
 
     if(selected.Count<=0) throw new Exception();
+
+    var total = 0;
 
     for(int i =0;i<=(dto.Count-1);i++){
       foreach(string item in selected){
         if(dto[i].name == item){
           dto[i] = new DTO(){
-              name=dto[i].name,
-              path=dto[i].path,
-              dir = dto[i].dir,
-              selected = true
-            };  
+            name=dto[i].name,
+            path=dto[i].path,
+            dir = dto[i].dir,
+            selected = true
+          };  
+          
+          total += (dto[i].dir)
+            ? Directory.GetFiles(dto[i].path,"*",SearchOption.AllDirectories).Count()
+            : 1; 
+          
         }
       }
     }
 
+    AnsiConsole.Progress()
+     .Columns(new ProgressColumn[]{
+        new ProgressBarColumn(),
+        new TaskDescriptionColumn(),
+      })
+      .Start(ctx => {
+    
+        var task1 = ctx.AddTask("[blue]Compactando[/]",maxValue:total);
+             
+        using(var fs = new FileStream(filename+".zip",FileMode.Create))
+        using(var zip  = new ZipArchive(fs, ZipArchiveMode.Create)){
+          foreach(var file in dto.Where(x=>x.selected ==true && x.dir ==false)){
+            zip.CreateEntryFromFile(file.path,Path.GetFileName(file.path));
+            task1.Description = $"󰈙 {file.name} compactado";
+            task1.Increment(1);
+          }
+          foreach(var file in dto.Where(x=>x.selected ==true && x.dir == true)){
+            var dir = new DirectoryInfo(file.path);
+            var father = dir.Parent;
 
-    using(var fs = new FileStream(filename+".zip",FileMode.Create))
-    using(var zip  = new ZipArchive(fs, ZipArchiveMode.Create)){
-      foreach(var file in dto.Where(x=>x.selected ==true && x.dir ==false))
-        zip.CreateEntryFromFile(file.path,Path.GetFileName(file.path));
-
-      foreach(var file in dto.Where(x=>x.selected ==true && x.dir == true)){
-        var dir = new DirectoryInfo(file.path);
-        var father = dir.Parent;
-
-        foreach(var path in Directory.GetFiles(dir.FullName,"*",SearchOption.AllDirectories)){
-            zip.CreateEntryFromFile(
-            path,
-            path.Replace(father.FullName,"")
-          );
+            foreach(var path in Directory.GetFiles(dir.FullName,"*",SearchOption.AllDirectories)){
+              zip.CreateEntryFromFile(
+              path,
+              path.Replace(father.FullName,"")
+            );
+            task1.Description = $"󰈙 {new FileInfo(path).Name} compactado";
+            task1.Increment(1);   
+          }
         }
       }
-    }
-
+        task1.StopTask();
+      });
     AnsiConsole.Write(new Rule());
-    AnsiConsole.MarkupLine($"[green]{filename}.zip[/] foi gerado com sucesso");
+    AnsiConsole.MarkupLine($"[green]{filename}.zip[/] foi gerado com sucesso!");
   }
   
   public void decompress(string  arq = null){
@@ -93,34 +114,44 @@ class MainController{
 
     var file = new FileInfo(filepath);
 
-    string name = file.Name.Remove((file.Name.Length-4) , 4);
+    AnsiConsole.Status()
+      .AutoRefresh(false)
+      .Spinner(Spinner.Known.Star)
+      .SpinnerStyle(Style.Parse("green bold"))
+      .Start($"Descompactado {file.Name}...", ctx => {
+    
+      string name = file.Name.Remove((file.Name.Length-4) , 4);
 
-    int i = 1;
+      int i = 1;
   
-    while(true){
+      while(true){
     
-      if(!Directory.Exists(name)) break;
+        if(!Directory.Exists(name)) break;
     
-      else if(!Directory.Exists(name+i)){
-        name = name +i;
-        break;
+        else if(!Directory.Exists(name+i)){
+          name = name +i;
+          break;
+        }
+        i++;
       }
-      i++;
-    }
 
-    Directory.CreateDirectory(name);
-    var mainDir = new DirectoryInfo(name);
+      Directory.CreateDirectory(name);
+      var mainDir = new DirectoryInfo(name);
 
-    using ZipArchive archive = ZipFile.OpenRead(file.FullName);
-    foreach(var entry in archive.Entries){
-      string destination = mainDir.FullName+"//"+ entry.FullName;      
+      using ZipArchive archive = ZipFile.OpenRead(file.FullName);
+
+      foreach(var entry in archive.Entries){
+        string destination = mainDir.FullName+"//"+ entry.FullName;      
       
-      Directory.CreateDirectory(Path.GetDirectoryName(destination)); 
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)); 
    
-    if(!entry.FullName.EndsWith("/") || entry.FullName.EndsWith("//"))
-        entry.ExtractToFile(destination,true);
-    }
-        AnsiConsole.MarkupLine($"\n[green]{name} foi descompactado![/]");
+      if(!entry.FullName.EndsWith("/") || entry.FullName.EndsWith("//"))
+          entry.ExtractToFile(destination,true);
+      }
+       AnsiConsole.MarkupLine($"\n[green]{name} foi descompactado![/]");
+
+    });
+
   }
 
   public void listItems(){

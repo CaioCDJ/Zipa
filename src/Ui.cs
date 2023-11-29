@@ -8,6 +8,24 @@ public class Ui{
   //   
   // }
 
+  public static void help(){
+    var table = new Table();
+
+    table.Expand = true;
+    table.Border = TableBorder.HeavyHead;
+    table.AddColumn("[lime]Comando[/]");
+    table.AddColumn("[lime]Como Usar[/]");
+
+    table.AddRow(
+        "[green]zip[/]",
+        "Comprimi arquivos e pastas em um arquivo [blue].Zip[/] ex: [aqua]zip directory1 program.cs directory2[/]");
+    
+    table.AddRow("[green]unzip[/]","Descompri um arquivo [blue].Zip[/] para uma pasta ex: [aqua]unzip comprimido.zip[/]");
+    
+    table.AddRow("[green]-h --h -help --help[/]","[blue]Auto descritivo[/]");
+
+    AnsiConsole.Write(table);
+  }
 
   public static void showPath(string path)
     => AnsiConsole.Write(new TextPath(path));
@@ -20,7 +38,8 @@ public class Ui{
           "1. Ver um arquivo compactado",
           "2. Compactar",
           "3. Descompactar",
-          "4. Sair"
+          "4. Ajuda",
+          "5. Sair"
           })
         );
  
